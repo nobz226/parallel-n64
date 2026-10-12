@@ -72,6 +72,23 @@ std::string replaceChars(std::string myString)
 	return myString;
 }
 
+/* Copies the core's overscan options into the config. Also called on the
+ * render thread when they change mid-game (see gliden64_overscan_dirty). */
+extern "C" void Config_ApplyOverscan()
+{
+	config.frameBufferEmulation.enableOverscan = EnableOverscan;
+	// NTSC
+	config.frameBufferEmulation.overscanNTSC.left = OverscanLeft;
+	config.frameBufferEmulation.overscanNTSC.right = OverscanRight;
+	config.frameBufferEmulation.overscanNTSC.top = OverscanTop;
+	config.frameBufferEmulation.overscanNTSC.bottom = OverscanBottom;
+	// PAL
+	config.frameBufferEmulation.overscanPAL.left = OverscanLeft;
+	config.frameBufferEmulation.overscanPAL.right = OverscanRight;
+	config.frameBufferEmulation.overscanPAL.top = OverscanTop;
+	config.frameBufferEmulation.overscanPAL.bottom = OverscanBottom;
+}
+
 void LoadCustomSettings(bool internal)
 {
 	std::string myString = replaceChars(RSP.romname);
@@ -220,18 +237,7 @@ extern "C" void Config_LoadConfig()
 	config.video.fxaa = EnableFXAA;
 	config.video.multisampling = MultiSampling;
 	
-	// Overscan
-	config.frameBufferEmulation.enableOverscan = EnableOverscan;
-	// NTSC
-	config.frameBufferEmulation.overscanNTSC.left = OverscanLeft;
-	config.frameBufferEmulation.overscanNTSC.right = OverscanRight;
-	config.frameBufferEmulation.overscanNTSC.top = OverscanTop;
-	config.frameBufferEmulation.overscanNTSC.bottom = OverscanBottom;
-	// PAL
-	config.frameBufferEmulation.overscanPAL.left = OverscanLeft;
-	config.frameBufferEmulation.overscanPAL.right = OverscanRight;
-	config.frameBufferEmulation.overscanPAL.top = OverscanTop;
-	config.frameBufferEmulation.overscanPAL.bottom = OverscanBottom;
+	Config_ApplyOverscan();
 
 	config.graphics2D.correctTexrectCoords = CorrectTexrectCoords;
 	config.graphics2D.enableNativeResTexrects = enableNativeResTexrects;

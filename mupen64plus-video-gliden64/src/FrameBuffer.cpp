@@ -1325,8 +1325,19 @@ void FrameBufferList::OverscanBuffer::draw(u32 _fullHeight, bool _PAL)
 }
 
 extern "C" uint32_t RemoveFBBlackBars;
+/* Set by the libretro side when the Overscan options change mid-game; the
+ * crop buffer is rebuilt here, on the thread that owns the GL context. */
+extern "C" volatile int gliden64_overscan_dirty;
+extern "C" void Config_ApplyOverscan();
 void FrameBufferList::renderBuffer()
 {
+	if (gliden64_overscan_dirty) {
+		gliden64_overscan_dirty = 0;
+		Config_ApplyOverscan();
+		m_overscan.destroy();
+		m_overscan.init();
+	}
+
 	if (g_debugger.isDebugMode()) {
 		g_debugger.draw();
 		return;
