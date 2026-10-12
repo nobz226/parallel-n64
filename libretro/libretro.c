@@ -2195,12 +2195,31 @@ void update_variables(bool startup)
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      if (!strcmp(var.value, "auto")) { }
+      if (!strcmp(var.value, "auto"))
+         g_count_per_scanline = 0;
       else if (!strcmp(var.value, "1500"))
          g_count_per_scanline = 1500;
       else if (!strcmp(var.value, "2200"))
          g_count_per_scanline = 2200;
+      /* The VI controller only honours CountPerScanlineOverride: with it
+       * unset every VI lasts exactly 1/60 s of CPU time whatever V_SYNC the
+       * game programs, so this option used to do nothing. A fixed count per
+       * scanline makes the VI length follow V_SYNC again (the classic
+       * overclock some 60 fps hacks depend on). Applies from the next
+       * V_SYNC write, which games make on every mode set. */
+      CountPerScanlineOverride = (uint32_t)g_count_per_scanline;
    }
+
+   /* CPU timing; read once, at start (restart to change) */
+   var.key = "parallel-n64-CountPerOp";
+   var.value = NULL;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+      CountPerOp = (uint32_t)atoi(var.value);
+
+   var.key = "parallel-n64-CountPerOpDenomPot";
+   var.value = NULL;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+      CountPerOpDenomPot = (uint32_t)atoi(var.value);
 
    var.key = "parallel-n64-alt-map";
    var.value = NULL;

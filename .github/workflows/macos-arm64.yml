@@ -1,0 +1,27 @@
+# Builds the core for Apple Silicon Macs (arm64, aarch64 dynarec) and keeps
+# the dylib as a workflow artifact.
+name: macOS arm64 core
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: make -j"$(sysctl -n hw.ncpu)" platform=osx
+
+      - name: Check the result
+        run: |
+          file parallel_n64_libretro.dylib
+          lipo -archs parallel_n64_libretro.dylib | grep -q arm64
+          nm -gU parallel_n64_libretro.dylib | grep -q _retro_run
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: parallel_n64_libretro-macos-arm64
+          path: parallel_n64_libretro.dylib

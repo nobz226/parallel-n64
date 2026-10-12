@@ -1214,6 +1214,38 @@ struct retro_core_option_v2_definition option_defs_us[] = {
         "auto"
     },
     {
+        CORE_NAME "-CountPerOpDenomPot",
+        "CPU Overclock (Restart)",
+        NULL,
+        "Runs the emulated CPU faster than a real N64 so games that slow down get more time per frame. Higher values cost more host CPU; some games misbehave when overclocked.",
+        NULL,
+        NULL,
+        {
+            { "0", "1x (off)" },
+            { "1", "2x" },
+            { "2", "4x" },
+            { "3", "8x" },
+            { NULL, NULL },
+        },
+        "0"
+    },
+    {
+        CORE_NAME "-CountPerOp",
+        "Count Per Op (Restart)",
+        NULL,
+        "Cycles the timer advances per emulated instruction. 0 uses the game's database value (or 2). Changing this breaks some games.",
+        NULL,
+        NULL,
+        {
+            { "0", "Database" },
+            { "1", NULL },
+            { "2", NULL },
+            { "3", NULL },
+            { NULL, NULL },
+        },
+        "0"
+    },
+    {
         CORE_NAME "-alt-map",
         "Independent C-button Controls",
         NULL,
