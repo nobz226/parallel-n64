@@ -1315,6 +1315,12 @@ void TextureCache::_load(u32 _tile, CachedTexture *_pTexture)
 			break;
 		++mipLevel;
 		const u32 tileMipLevel = gSP.texture.tile + mipLevel + 1;
+		/* There are 8 tiles; a high base tile with several levels would
+		 * read past gDP.tiles into unrelated state. */
+		if (tileMipLevel > 7) {
+			_pTexture->max_level = static_cast<u8>(mipLevel - 1);
+			break;
+		}
 		gDPTile & mipTile = gDP.tiles[tileMipLevel];
 		line = mipTile.line;
 		tmptex.tMem = mipTile.tmem;
