@@ -1,13 +1,15 @@
 /* GLideN64 on ANGLE: see angle_ctx.h.
  *
- * ANGLE is loaded at runtime from <core folder>/angle/ (libGLESv2.dylib,
- * libEGL.dylib) so the core still loads and runs on the system OpenGL when
- * the libraries are missing. Everything here talks to ANGLE through function
+ * ANGLE (libGLESv2.dylib, libEGL.dylib) is loaded at runtime from
+ * RetroArch.app/Contents/Frameworks/, or <core folder>/angle/, so the core
+ * still loads and runs on the system OpenGL when the libraries are missing. Everything here talks to ANGLE through function
  * pointers fetched from those libraries; nothing links against EGL or GLES. */
 
 #include "angle_ctx.h"
 
 #include <dlfcn.h>
+#include <limits.h>
+#include <mach-o/dyld.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -116,26 +118,47 @@ static retro_log_printf_t angle_log;
 
 #define ALOG(level, ...) do { if (angle_log) angle_log(level, "[ANGLE] " __VA_ARGS__); } while (0)
 
-/* <folder of this core>/angle/<name> */
+/* ANGLE ships inside RetroArch.app/Contents/Frameworks/ next to MoltenVK;
+ * <core folder>/angle/ is the fallback for a RetroArch without it. */
+static void *try_load(const char *path)
+{
+   void *h = dlopen(path, RTLD_NOW | RTLD_LOCAL);
+   if (h)
+      ALOG(RETRO_LOG_INFO, "loaded %s\n", path);
+   return h;
+}
+
 static void *load_lib(const char *name)
 {
+   char exe[4096], real[4096], path[4096];
+   uint32_t size = sizeof(exe);
    Dl_info info;
-   char path[4096];
    char *slash;
    void *h;
 
-   if (!dladdr((const void *)&angle_ctx_create, &info) || !info.dli_fname)
-      return NULL;
-   snprintf(path, sizeof(path), "%s", info.dli_fname);
-   slash = strrchr(path, '/');
-   if (!slash)
-      return NULL;
-   snprintf(slash + 1, sizeof(path) - (slash + 1 - path), "angle/%s", name);
+   /* <app>/Contents/MacOS/RetroArch -> <app>/Contents/Frameworks/<name> */
+   if (_NSGetExecutablePath(exe, &size) == 0 && realpath(exe, real)
+         && (slash = strrchr(real, '/')))
+   {
+      *slash = '\0';
+      snprintf(path, sizeof(path), "%s/../Frameworks/%s", real, name);
+      if ((h = try_load(path)))
+         return h;
+   }
 
-   h = dlopen(path, RTLD_NOW | RTLD_LOCAL);
-   if (!h)
-      ALOG(RETRO_LOG_ERROR, "can't load %s: %s\n", path, dlerror());
-   return h;
+   if (dladdr((const void *)&angle_ctx_create, &info) && info.dli_fname)
+   {
+      snprintf(path, sizeof(path), "%s", info.dli_fname);
+      if ((slash = strrchr(path, '/')))
+      {
+         snprintf(slash + 1, sizeof(path) - (slash + 1 - path), "angle/%s", name);
+         if ((h = try_load(path)))
+            return h;
+      }
+   }
+
+   ALOG(RETRO_LOG_ERROR, "%s not found in RetroArch.app/Contents/Frameworks or cores/angle\n", name);
+   return NULL;
 }
 
 static retro_proc_address_t angle_proc(const char *sym)

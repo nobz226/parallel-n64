@@ -1701,7 +1701,7 @@ struct retro_core_option_v2_definition option_defs_us[] = {
         CORE_NAME "-gliden64-api",
         "(GLideN64) Graphics API (Restart)",
         "Graphics API (Restart)",
-        "OpenGL: the macOS system OpenGL, through RetroArch's glcore driver. OpenGL ES (ANGLE): the ANGLE libraries in cores/angle/ draw on Metal and the finished frames go to RetroArch as images, so any video driver works and the system OpenGL is not used. Falls back to OpenGL when ANGLE is missing.",
+        "OpenGL: the macOS system OpenGL, through RetroArch's glcore driver. OpenGL ES (ANGLE): the ANGLE libraries bundled with RetroArch (or in cores/angle/) draw on Metal and the finished frames go to RetroArch as images, so any video driver works and the system OpenGL is not used. Falls back to OpenGL when ANGLE is missing.",
         NULL,
         "gliden64",
         {
