@@ -232,8 +232,8 @@ void CachedTextureUnpackAlignment::setTextureUnpackAlignment(s32 _param)
 
 CachedFunctions::CachedFunctions(const GLInfo & _glinfo)
 {
-	if (_glinfo.isGLESX) {
-		// Disable parameters, not avalible for GLESX
+	if (_glinfo.isGLESX && !_glinfo.clipDistanceDepthClamp) {
+		// Disable parameters, not avalible for GLESX (unless GL_EXT_depth_clamp)
 		m_enables.emplace(GL_DEPTH_CLAMP, Parameter());
 	}
 }

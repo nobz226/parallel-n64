@@ -37,6 +37,7 @@ typedef intptr_t EGLAttrib;
 #define EGL_PLATFORM_ANGLE_ANGLE         0x3202
 #define EGL_PLATFORM_ANGLE_TYPE_ANGLE    0x3203
 #define EGL_PLATFORM_ANGLE_TYPE_METAL_ANGLE 0x3489
+#define EGL_ROBUST_RESOURCE_INITIALIZATION_ANGLE 0x3453
 #define EGL_NO_CONTEXT                   ((EGLContext)0)
 #define EGL_NO_SURFACE                   ((EGLSurface)0)
 #define EGL_NO_DISPLAY                   ((EGLDisplay)0)
@@ -355,8 +356,11 @@ bool angle_ctx_create(unsigned max_w, unsigned max_h, retro_log_printf_t log)
    /* the newest ES 3.x ANGLE's Metal backend offers */
    for (v = 0; v < sizeof(es_minor) / sizeof(es_minor[0]) && !a.context; v++)
    {
+      /* zero-filled new textures and renderbuffers, as the system OpenGL
+       * gives them; GLideN64 relies on it (Metal leaves them undefined) */
       const EGLint context_attribs[] = {
-         EGL_CONTEXT_MAJOR_VERSION, 3, EGL_CONTEXT_MINOR_VERSION, es_minor[v], EGL_NONE };
+         EGL_CONTEXT_MAJOR_VERSION, 3, EGL_CONTEXT_MINOR_VERSION, es_minor[v],
+         EGL_ROBUST_RESOURCE_INITIALIZATION_ANGLE, 1, EGL_NONE };
       a.context = a.CreateContext(a.display, config, EGL_NO_CONTEXT, context_attribs);
    }
    if (a.surface == EGL_NO_SURFACE || a.context == EGL_NO_CONTEXT
