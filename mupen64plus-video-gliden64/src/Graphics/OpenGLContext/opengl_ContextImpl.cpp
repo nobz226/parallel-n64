@@ -79,7 +79,10 @@ void ContextImpl::init()
 	}
 
 	{
-		if ((m_glInfo.isGLESX && (m_glInfo.bufferStorage && m_glInfo.majorVersion * 10 + m_glInfo.minorVersion >= 32)) || !m_glInfo.isGLESX)
+		/* ANGLE: vertex buffers like the desktop path; its streaming of client-side
+		 * vertex arrays (UnbufferedDrawer) mis-renders some Conker draws on Metal */
+		if ((m_glInfo.isGLESX && (m_glInfo.bufferStorage && m_glInfo.majorVersion * 10 + m_glInfo.minorVersion >= 32)) || !m_glInfo.isGLESX
+				|| (m_glInfo.isANGLE && m_glInfo.drawElementsBaseVertex))
 			m_graphicsDrawer.reset(new BufferedDrawer(m_glInfo, m_cachedFunctions->getCachedVertexAttribArray(), m_cachedFunctions->getCachedBindBuffer()));
 		else
 			m_graphicsDrawer.reset(new UnbufferedDrawer(m_glInfo, m_cachedFunctions->getCachedVertexAttribArray()));

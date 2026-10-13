@@ -394,7 +394,10 @@ bool angle_ctx_create(unsigned max_w, unsigned max_h, retro_log_printf_t log)
    }
    a.glBindRenderbuffer(GL_RENDERBUFFER, 0);
 
-   a.bgra = has_extension("GL_EXT_read_format_bgra");
+   /* Read back RGBA (ANGLE copies it straight out of the Metal texture) and
+    * swizzle while flipping rows: asking for BGRA sent every pixel through
+    * ANGLE's generic float conversion, the core's biggest ANGLE CPU cost. */
+   a.bgra = false;
    if (getenv("N64_ANGLE_DEBUG"))
    {
       GLint i, n = 0;
