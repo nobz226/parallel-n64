@@ -2978,6 +2978,10 @@ content_ready:
 
    mupencorestop      = false;
    g_rsp_force_halt   = 0;
+   /* retro_deinit's mupen_main_stop() sets this; a frontend that keeps the
+    * core loaded (close content -> run again) would otherwise never step
+    * the new session and show only blank frames */
+   g_real_stop        = 0;
    /* Finish ROM load before doing anything funny,
     * so we can return failure if needed. */
    emu_step_load_data();
@@ -3519,7 +3523,13 @@ int retro_return(bool just_flipping)
    }
 
    stop_stepping = true;
-   frame_break = 1;
+   /* Close content (retro_unload_game's last slice, the only time the RSP
+    * force-halt is set) is a real stop, not a frame yield: the dynarec,
+    * the cached interpreter and main_run only tear their session down when
+    * frame_break is clear, and a session left up made the next content
+    * loaded into the same core instance run the stopped machine (blank
+    * screen) or crash in the dynarec. */
+   frame_break = g_rsp_force_halt ? 0 : 1;
    /* Break the device-execution loop for this frame. main_run() clears this
     * and re-enters run_device() on the next slice; EmuThreadStep distinguishes
     * a real stop (mupencorestop latched by CoreDoCommand STOP) from this

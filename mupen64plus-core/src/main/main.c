@@ -735,6 +735,8 @@ unsigned int r4300_emumode;
 unsigned int r4300_jit_backend;
 size_t rdram_size;
 
+extern int g_rsp_force_halt;
+
 m64p_error main_run(void)
 {
     static int l_setup_done = 0;
@@ -796,6 +798,24 @@ m64p_error main_run(void)
         g_dev.r4300.new_dynarec_hot_state.stop = 0;
 #endif
         run_device(&g_dev);
+
+        /* Close content: retro_unload_game drives this last slice with the
+         * RSP force-halt set (only it sets that flag). End the
+         * session here so the next ROM loaded into the same core instance
+         * gets the one-time setup again - otherwise it kept stepping the
+         * stopped machine and showed only blank frames. The plugins' romClosed
+         * runs later from mupen_main_exit(). */
+        if (g_rsp_force_halt) {
+            l_setup_done = 0;
+            for (i = 0; i < GAME_CONTROLLERS_COUNT; ++i) {
+                if (!Controls[i].RawData && (Controls[i].Type == CONT_TYPE_STANDARD) && g_dev.gb_carts[i].read_gb_cart != NULL) {
+                    release_gb_rom(&l_gb_carts_data[i]);
+                    release_gb_ram(&l_gb_carts_data[i]);
+                }
+            }
+            close_pif();
+            close_dd_disk(&dd_disk);
+        }
         return M64ERR_SUCCESS;
     }
 
