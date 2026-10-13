@@ -311,6 +311,11 @@ else ifneq (,$(findstring osx,$(platform)))
    PLATFORM_EXT := unix
    PLATCFLAGS += -DHAVE_POSIX_MEMALIGN
 
+   # GLideN64 on ANGLE (OpenGL ES on Metal) as an alternative to the system
+   # OpenGL; the libraries are loaded at runtime from cores/angle/
+   HAVE_ANGLE = 1
+   PLATCFLAGS += -DHAVE_ANGLE
+
 	COREFLAGS += -DOS_MAC_OS_X -stdlib=libc++
 
    # Target Dynarec

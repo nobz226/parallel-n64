@@ -24,6 +24,9 @@ uint8_t* g_dd_disk;
 #include <string.h>
 
 #include <libretro.h>
+#ifdef HAVE_ANGLE
+#include "angle_ctx.h"
+#endif
 #include <streams/file_stream.h>
 #include <file/file_path.h>
 
@@ -926,6 +929,16 @@ static void present_frame(void)
             /* the E90 sprite chip draws mtetrisc's playfield; the hardware
              * renderers leave the frame on the GPU, so it is composited there */
             aleck64_e90_gl_draw(screen_width, screen_height);
+#ifdef HAVE_ANGLE
+            if (angle_ctx_active())
+            {
+               /* the core's own context: hand over the finished image */
+               size_t pitch = 0;
+               const void *pixels = angle_ctx_read_frame(screen_width, screen_height, &pitch);
+               video_cb(pixels, screen_width, screen_height, pitch);
+               break;
+            }
+#endif
             video_cb(RETRO_HW_FRAME_BUFFER_VALID, screen_width, screen_height, 0);
 #elif defined(HAVE_THR_AL)
             video_cb((screen_pitch == 0) ? NULL : (screen_pixels ? screen_pixels : prescale), screen_width, screen_height, screen_pitch);
@@ -1343,10 +1356,29 @@ static bool context_framebuffer_lock(void *data)
    return true;
 }
 
+#ifdef HAVE_ANGLE
+/* GLideN64 Graphics API: OpenGL (macOS) or OpenGL ES through the ANGLE
+ * libraries shipped next to the core (angle_ctx.c) */
+static bool use_angle;
+#endif
+
 static bool retro_init_gl(bool core)
 {
 #if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES)
    glsm_ctx_params_t params     = {0};
+
+#ifdef HAVE_ANGLE
+   if (use_angle && gfx_plugin == GFX_GLIDEN64)
+   {
+      if (angle_ctx_create(screen_width, screen_height, log_cb))
+      {
+         params.external_get_proc_address        = angle_ctx_get_proc_address;
+         params.external_get_current_framebuffer = angle_ctx_get_framebuffer;
+      }
+      else if (log_cb)
+         log_cb(RETRO_LOG_WARN, "mupen64plus: ANGLE unavailable, using the system OpenGL.\n");
+   }
+#endif
 
    params.context_reset         = context_reset;
    params.context_destroy       = context_destroy;
@@ -1433,6 +1465,16 @@ void retro_deinit(void)
 {
    mupen_main_stop();
    mupen_main_exit();
+
+#ifdef HAVE_ANGLE
+   if (angle_ctx_active())
+   {
+      angle_ctx_make_current();
+      context_destroy();
+      angle_ctx_destroy();
+      glsm_context_lost();
+   }
+#endif
 
    deinit_audio_libretro();
 
@@ -2815,6 +2857,11 @@ bool retro_load_game(const struct retro_game_info *game)
 
       if (!vulkan_inited)
       {
+#ifdef HAVE_ANGLE
+         struct retro_variable api = { CORE_NAME "-gliden64-api", NULL };
+         use_angle = environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &api) && api.value
+               && !strcmp(api.value, "angle");
+#endif
          retro_init_gl(/*core*/ (gfx_plugin == GFX_GLIDEN64)
                              || (gfx_plugin == GFX_PARALLEL));
          gl_inited = true;
@@ -2990,6 +3037,12 @@ content_ready:
       return false;
 
    first_context_reset = true;
+
+#ifdef HAVE_ANGLE
+   /* the frontend resets contexts it created; this one is the core's own */
+   if (angle_ctx_active())
+      context_reset();
+#endif
 
    return true;
 }
@@ -3223,6 +3276,9 @@ void retro_run (void)
          case GFX_GLIDEN64:
          case GFX_RICE:
 #if defined(HAVE_OPENGL) || defined(HAVE_OPENGLES)
+#ifdef HAVE_ANGLE
+            angle_ctx_make_current();
+#endif
             glsm_enter();
 #endif
             break;

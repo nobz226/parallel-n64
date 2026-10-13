@@ -3503,6 +3503,21 @@ static bool glsm_state_ctx_init(glsm_ctx_params_t *params)
    if (!params || !params->environ_cb)
       return false;
 
+   if (params->external_get_proc_address)
+   {
+      hw_render.context_type            = RETRO_HW_CONTEXT_OPENGLES3;
+      hw_render.version_major           = 3;
+      hw_render.version_minor           = 0;
+      hw_render.context_reset           = params->context_reset;
+      hw_render.context_destroy         = params->context_destroy;
+      hw_render.stencil                 = params->stencil;
+      hw_render.depth                   = true;
+      hw_render.bottom_left_origin      = true;
+      hw_render.get_proc_address        = params->external_get_proc_address;
+      hw_render.get_current_framebuffer = params->external_get_current_framebuffer;
+      return true;
+   }
+
 #ifdef HAVE_OPENGLES
 #if defined(HAVE_OPENGLES_3_1)
    hw_render.context_type       = RETRO_HW_CONTEXT_OPENGLES_VERSION;
@@ -3558,6 +3573,13 @@ GLuint glsm_get_current_framebuffer(void)
 bool glsm_context_is_core(void)
 {
    return hw_render.context_type == RETRO_HW_CONTEXT_OPENGL_CORE;
+}
+
+/* The context is gone for good (a context the core created and destroyed):
+ * the next reset sets everything up from scratch, like the first one. */
+void glsm_context_lost(void)
+{
+   window_first = 0;
 }
 
 void* glsm_get_proc_address(const char* sym)

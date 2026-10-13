@@ -312,6 +312,10 @@ SOURCES_C += $(LIBRETRO_COMM_DIR)/glsm/glsm.c \
 				 $(LIBRETRO_DIR)/aleck64_e90_gl.c
 endif
 
+ifeq ($(HAVE_ANGLE),1)
+SOURCES_C += $(LIBRETRO_DIR)/angle_ctx.c
+endif
+
 SOURCES_C += $(LIBRETRO_DIR)/libretro.c \
 				 $(LIBRETRO_DIR)/aleck64_mame.c \
 				 $(CORE_DIR)/src/plugin/emulate_game_controller_via_libretro.c \

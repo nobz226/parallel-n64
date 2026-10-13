@@ -16,6 +16,9 @@ using namespace opengl;
 void GLInfo::init() {
 	const char * strVersion = reinterpret_cast<const char *>(glGetString(GL_VERSION));
 	isGLESX = strstr(strVersion, "OpenGL ES") != nullptr;
+	/* ANGLE implements ES 3.0 completely on top of Metal/Vulkan/D3D, without
+	 * the framebuffer-blit gaps GLideN64 guards against on mobile drivers */
+	isANGLE = isGLESX && strstr(strVersion, "(ANGLE ") != nullptr;
 	isGLES2 = strstr(strVersion, "OpenGL ES 2") != nullptr;
 	if (isGLES2) {
 		majorVersion = 2;
@@ -182,6 +185,13 @@ void GLInfo::init() {
 
 	depthTexture = !isGLES2 || Utils::isExtensionSupported(*this, "GL_OES_depth_texture");
 	noPerspective = Utils::isExtensionSupported(*this, "GL_NV_shader_noperspective_interpolation");
+	/* ES drivers that clamp depth and clip on gl_ClipDistance (ANGLE on
+	 * Metal) handle "no near clipping" microcode the desktop way, instead of
+	 * the noperspective fragment-depth fallback. */
+	clipDistanceDepthClamp = isGLESX && Utils::isExtensionSupported(*this, "GL_EXT_depth_clamp")
+			&& Utils::isExtensionSupported(*this, "GL_ANGLE_clip_cull_distance");
+	if (clipDistanceDepthClamp)
+		noPerspective = false;
 
 	fetch_depth = Utils::isExtensionSupported(*this, "GL_ARM_shader_framebuffer_fetch_depth_stencil");
 	texture_barrier = !isGLESX && (numericVersion >= 45 || Utils::isExtensionSupported(*this, "GL_ARB_texture_barrier"));

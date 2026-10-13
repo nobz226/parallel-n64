@@ -106,7 +106,7 @@ void ContextImpl::destroy()
 
 void ContextImpl::setClampMode(graphics::ClampMode _mode)
 {
-	if (!m_glInfo.isGLESX) {
+	if (!m_glInfo.isGLESX || m_glInfo.clipDistanceDepthClamp) {
 		switch (_mode) {
 		case graphics::ClampMode::ClippingEnabled:
 			m_cachedFunctions->getCachedEnable(graphics::enable::DEPTH_CLAMP)->enable(false);
@@ -505,7 +505,7 @@ bool ContextImpl::isSupported(graphics::SpecialFeatures _feature) const
 	case graphics::SpecialFeatures::BlitFramebuffer:
 		return !m_glInfo.isGLES2;
 	case graphics::SpecialFeatures::WeakBlitFramebuffer:
-		return m_glInfo.isGLESX;
+		return m_glInfo.isGLESX && !m_glInfo.isANGLE;
 	case graphics::SpecialFeatures::Multisampling:
 		return m_glInfo.msaa;
 	case graphics::SpecialFeatures::ImageTextures:
@@ -517,7 +517,7 @@ bool ContextImpl::isSupported(graphics::SpecialFeatures _feature) const
 	case graphics::SpecialFeatures::IntegerTextures:
 		return !m_glInfo.isGLES2;
 	case graphics::SpecialFeatures::ClipControl:
-		return !m_glInfo.isGLESX;
+		return !m_glInfo.isGLESX || m_glInfo.clipDistanceDepthClamp;
 	case graphics::SpecialFeatures::FramebufferFetch:
 		return m_glInfo.ext_fetch;
 	case graphics::SpecialFeatures::TextureBarrier:

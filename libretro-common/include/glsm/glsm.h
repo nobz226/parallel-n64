@@ -124,11 +124,17 @@ typedef struct glsm_ctx_params
    unsigned major;
    unsigned minor;
    enum retro_hw_context_type context_type;
+   /* A context the core created itself (OpenGL ES 3): glsm uses these
+    * instead of asking the frontend for one. */
+   retro_hw_get_proc_address_t external_get_proc_address;
+   retro_hw_get_current_framebuffer_t external_get_current_framebuffer;
 } glsm_ctx_params_t;
 
 GLuint glsm_get_current_framebuffer(void);
 
 bool glsm_context_is_core(void);
+
+void glsm_context_lost(void);
 
 RETRO_END_DECLS
 

@@ -229,6 +229,8 @@ public:
 			std::stringstream ss;
 			ss << "#version " << Utils::to_string(_glinfo.majorVersion) << Utils::to_string(_glinfo.minorVersion) << "0 es " << std::endl;
 			ss << "# define IN in" << std::endl << "# define OUT out" << std::endl;
+			if (_glinfo.clipDistanceDepthClamp)
+				ss << "#extension GL_ANGLE_clip_cull_distance : require" << std::endl;
 			if (_glinfo.noPerspective) {
 				ss << "#extension GL_NV_shader_noperspective_interpolation : enable" << std::endl
 					<< "noperspective OUT highp float vZCoord;" << std::endl << "uniform lowp int uClampMode;" << std::endl;
@@ -416,7 +418,7 @@ class VertexShaderEnd : public ShaderPart
 public:
 	VertexShaderEnd(const opengl::GLInfo & _glinfo)
 	{
-		if (!_glinfo.isGLESX) {
+		if (!_glinfo.isGLESX || _glinfo.clipDistanceDepthClamp) {
 			m_part =
 				"  gl_ClipDistance[0] = gl_Position.w - gl_Position.z;	\n"
 				;
